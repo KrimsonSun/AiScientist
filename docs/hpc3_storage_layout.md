@@ -292,6 +292,7 @@ The agent writes only in the user's own folders here: the session's folder, and 
 Nothing outside them, including `$HOME`, the member's personal folder `/dfs3b/ruic20_lab/<ucinetid>/`,
 other members' folders and the shared assets, can be written, moved or deleted by the agent, and
 the user is not asked to make an exception: `run_shell` and `fetch_url` refuse such a command before it runs.
+Deleting or moving data inside the user's own folders still asks the user first.
 
 `run_shell` runs inside Apptainer on the worker (`hpc/shell.py`, `ShellSandbox`):
 `apptainer exec --containall --no-mount bind-paths` in `<root>/containers/rockylinux_9.7.20251123.sif`.
@@ -335,10 +336,9 @@ refused. A container image (`docker://` from quay.io, ghcr.io or docker.io, at a
   mounted read-only and its `bin/` comes first on `PATH`. A `run_code` snippet still runs on the
   image's own Python. `find_software` lists the environments that provide a program or package.
 
-`envs/` is not group-writable, so `envs/lab/` is created once by its owner:
-`mkdir -m 3775 <root>/envs/lab` (group-writable, setgid, sticky: any member's build can publish, only
-an environment's owner can remove it).
-Deleting or moving data inside them still asks the user first.
+`envs/lab/`, like `envs/` and `containers/`, is group-writable, setgid and sticky (3775; *Permissions
+of the shared root*): any member's build can publish an environment or pull an image, and only its
+owner can remove it.
 
 The heartbeat is the session's `jobs/worker/aiscientist-worker-<ucinetid>-<jobid>.alive`; a new
 session looks for it in all of the user's session folders before it cancels a holder nothing uses. A command refreshes
@@ -474,8 +474,10 @@ Other removals still run on a login node over the SSH session:
 
 ## Permissions of the shared root
 
-The root is `drwxrwsr-x` (2775, setgid). `sessions/` is `drwxrwsr-t` (3775: group-writable,
-setgid, sticky), so any lab member's session can create its folder and only its owner can remove
-it; each session folder is 0700 (`hpc_gc.ensure_shared_dirs`). `/dfs3b/ruic20_lab` itself is not group-writable, which is why the
+The root is `drwxrwsr-x` (2775, setgid). `sessions/`, `envs/`, `envs/lab/` and `containers/` are
+`drwxrwsr-t` (3775: group-writable, setgid, sticky), so any lab member's session can create its
+folder, build a lab environment or pull an image, and only the owner of a folder or file can remove
+it; each session folder is 0700 (`hpc_gc.ensure_shared_dirs`). `models/` is `drwxr-sr-x` (2755):
+model weights are installed by its owner. `/dfs3b/ruic20_lab` itself is not group-writable, which is why the
 root is under `software/`. To move it, someone with `ruic20` rights creates the new directory and
 `AISCIENTIST_HPC_SHARED_ROOT` points to it; no code changes.
