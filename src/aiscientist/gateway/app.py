@@ -12528,6 +12528,7 @@ def _lab_event_to_chat(ev: dict[str, Any]) -> list[dict[str, Any]]:
         # Never rendered before, so a 7-minute wait and a 1-minute wait on the same question
         # looked like random slowness. Say which and why.
         why = {"dataset_design": "the dataset has an experimental contrast (comparative study)",
+               "descriptive": "your request describes the data and compares none of its groups",
                "question": "the PI's read of the question",
                "scope": "your request names the only analyses it wants",
                "continuation": "this message adds to the analysis already done in this chat"}.get(
